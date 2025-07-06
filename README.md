@@ -29,10 +29,10 @@ Loyalty Point = (0.01 * deposit) + (0.005 * Withdrawal amount) + (0.001 * (maxim
 
 
 ## Objectives
-**This report presents a player loyalty analysis for ABC, a real-money gaming platform.
+**This project presents a player loyalty analysis for ABC, a real-money gaming platform.
 Using player activity data (deposits, withdrawals, and games), the goal is to calculate
 loyalty points, rank users, and propose a bonus distribution method. Additionally, this
-report evaluates the fairness of the existing loyalty formula.**
+project evaluates the fairness of the existing loyalty formula.**
 
 ## Project Structure
 
@@ -73,34 +73,14 @@ withdrawal_Amount  integer
 
 ```
 
-### 2. Data Exploration & Cleaning
-
-- **Missing value check**: Determine the total number of records in the dataset.
-- **Customer Count**: Find out how many unique customers are in the dataset.
-- **Category Count**: Identify all unique product categories in the dataset.
-- **Null Value Check**: Check for any null values in the dataset and delete records with missing data.
-
-```sql
-select * from retail_sales
-limit 10
-
-select * from retail_sales
-where age  is null or quantiy  is null or
-price_per_unit  is null or  cogs  
-is null or total_sale  is null
-
-delete from retail_sales
-where age  is null or quantiy  is null or
-price_per_unit  is null or  cogs  
-is null or total_sale  is null
-
-```
-
 ### 3. Data Analysis & Findings
+**Part A - Calculating loyalty points**
+On each day, there are 2 slots for each of which the loyalty points are to be calculated:
+S1 from 12am to 12pm
+S2 from 12pm to 12am
+Based on the above information and the data provided answer the following questions:
 
-The following SQL queries were developed to answer specific business questions:
-
-1. **who is the senior most employee based on job title**:
+1. **1. Find Playerwise Loyalty points earned by Players in the following slots:-**:
 ```sql
 select * from employee
 order by levels desc
