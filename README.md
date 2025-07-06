@@ -13,7 +13,7 @@ The criteria to convert number of games played, deposits and withdrawal into poi
 
 ![loyalty points disribution](https://github.com/giriaman610/Loyalty-Analytics-Reward-Distribution--SQL/blob/main/Loyal%20points%20distribution.png)
 
-Final Loyalty Point Formula
+Final Loyalty Point Formula<br>
 Loyalty Point = (0.01 * deposit) + (0.005 * Withdrawal amount) + (0.001 * (maximum of (#deposit - #withdrawal) or 0)) + (0.2 * Number of games played)
 
 
