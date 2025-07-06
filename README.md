@@ -29,11 +29,10 @@ Loyalty Point = (0.01 * deposit) + (0.005 * Withdrawal amount) + (0.001 * (maxim
 
 
 ## Objectives
-
-1. **Set up a ABC_Gaming_Database database**: Create and populate the database with required tables
-2. **Data Cleaning**: Identify and remove any records with missing or null values.
-3. **Exploratory Data Analysis (EDA)**: Perform basic exploratory data analysis to understand the dataset.
-4. **Business Analysis**: Use SQL to answer specific business questions and derive insights.
+**This report presents a player loyalty analysis for ABC, a real-money gaming platform.
+Using player activity data (deposits, withdrawals, and games), the goal is to calculate
+loyalty points, rank users, and propose a bonus distribution method. Additionally, this
+report evaluates the fairness of the existing loyalty formula.**
 
 ## Project Structure
 
