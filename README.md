@@ -11,7 +11,7 @@ To retain players on the platform, the company ABC gives loyalty points to their
 Loyalty points are calculated on the basis of the number of games played, deposits and withdrawal made on the platform by a particular player.
 The criteria to convert number of games played, deposits and withdrawal into points is given as below :
 
-
+![loyalty points disribution](https://github.com/giriaman610/Loyalty-Analytics-Reward-Distribution--SQL/blob/main/Loyal%20points%20distribution.png)
 
 
 
