@@ -1,1 +1,1 @@
-# Loyalty-Analytics-Reward-Distribution--SQL
+# Loyalty-Analytics & Reward-Distribution--SQL
