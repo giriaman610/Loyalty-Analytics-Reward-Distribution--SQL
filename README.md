@@ -36,9 +36,6 @@ project evaluates the fairness of the existing loyalty formula.**
 
 ## Project Structure
 
-### 1. Database Setup
-![Library_project](https://github.com/giriaman610/Music-Store-Analysis-SQL/blob/main/schema_diagram.png)
-
 - **Database Creation**: The project starts by creating a database named `ABC_Gaming_Database`.
 - **Table Creation**: Tables are created of different datasets deposit_amount_data,withdrawal_amount_data
 
@@ -80,44 +77,329 @@ S1 from 12am to 12pm
 S2 from 12pm to 12am
 Based on the above information and the data provided answer the following questions:
 
-1. **1. Find Playerwise Loyalty points earned by Players in the following slots:-**:
+ **1.Now calculating loyality points for each category in repsective table**:
 ```sql
-select * from employee
-order by levels desc
-limit 1
+1.deposit  amount table
+
+ALTER TABLE Deposit_Amount_Data ADD COLUMN loyalty_points NUMERIC;
+UPDATE Deposit_Amount_Data
+SET loyalty_points = 0.01 * "deposit_amount";
+
+-2.calculating loyalty points withdrawal amount table
+
+ALTER TABLE Withdrawal_Amount_data ADD COLUMN loyalty_points NUMERIC;
+UPDATE Withdrawal_Amount_data
+SET loyalty_points = 0.005 * "withdrawal_amount";
+
+3.Gameplay data table
+
+ALTER TABLE User_Gameplay_data ADD COLUMN loyalty_points NUMERIC;
+UPDATE User_Gameplay_data
+SET loyalty_points = 0.2 * "games_played";
+
 ```
 
-2. **which countries have the most invoices**:
+ **2 a. Calculating total loyalty points for 2nd October Slot S1**:
 ```sql
-select count(*) as invoice_count,billing_country
-from invoice
-group by billing_country
-order by invoice_count desc;
+CREATE TEMP TABLE deposit_slot_s2 AS
+SELECT
+  user_id,
+  SUM(loyalty_points) AS deposit_points,
+  COUNT(*) AS num_deposit
+FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-02 00:00:00' AND datetime < '2022-10-02 12:00:00'
+GROUP BY user_id;
+
+CREATE TEMP TABLE withdrawal_slot_s1 AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS withdrawal_points,
+  COUNT(*) AS num_withdrawal
+FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-02 00:00:00' AND datetime < '2022-10-02 12:00:00'
+GROUP BY user_id;
+
+CREATE TEMP TABLE gameplay_slot_s1 AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS game_points,
+  SUM("games_played") AS games_played
+FROM User_Gameplay_data
+WHERE datetime >= '2022-10-02 00:00:00' AND datetime < '2022-10-02 12:00:00'
+GROUP BY user_id;
+
+DROP TABLE IF EXISTS slot1_bonus_point
+CREATE TEMP TABLE slot1_bonus_point as
+
+WITH deposits AS (
+  SELECT user_id, COUNT(*) AS num_deposit
+  FROM Deposit_Amount_Data
+  WHERE datetime >= '2022-10-02 00:00:00' AND datetime < '2022-10-02 12:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+),
+withdrawals AS (
+  SELECT user_id, COUNT(*) AS num_withdrawal
+  FROM Withdrawal_Amount_data
+  WHERE datetime >= '2022-10-02 00:00:00' AND datetime < '2022-10-02 12:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+)
+SELECT
+  COALESCE(d.user_id, w.user_id) AS user_id,
+  COALESCE(d.num_deposit, 0) AS num_deposit,
+  COALESCE(w.num_withdrawal, 0) AS num_withdrawal,
+  0.001 * GREATEST(COALESCE(d.num_deposit, 0) - COALESCE(w.num_withdrawal, 0), 0) AS bonus_points
+FROM deposits d
+FULL OUTER JOIN withdrawals w ON d.user_id = w.user_id;
+
+
+SELECT 
+  COALESCE(d.user_id, w.user_id, g.user_id, b.user_id) AS user_id,
+  COALESCE(d.deposit_points, 0) AS deposit_points,
+  COALESCE(w.withdrawal_points, 0) AS withdrawal_points,
+  COALESCE(g.game_points, 0) AS game_points,
+  COALESCE(b.bonus_points, 0) AS bonus_points,
+  (
+    COALESCE(d.deposit_points, 0) +
+    COALESCE(w.withdrawal_points, 0) +
+    COALESCE(g.game_points, 0) +
+    COALESCE(b.bonus_points, 0)
+  ) AS total_loyalty_points
+FROM deposit_slot_s2 d
+FULL OUTER JOIN withdrawal_slot_s1 w ON d.user_id = w.user_id
+FULL OUTER JOIN gameplay_slot_s1 g ON COALESCE(d.user_id, w.user_id) = g.user_id
+FULL OUTER JOIN slot1_bonus_point b ON COALESCE(d.user_id, w.user_id, g.user_id) = b.user_id
+ORDER BY total_loyalty_points DESC
+
+```
+**2 b.Calculating total loyalty points for 16nd October Slot S2**:
+```sql
+CREATE TEMP TABLE deposit_slot_s2 AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS deposit_points,
+  COUNT(*) AS num_deposit
+FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-16 12:00:00' AND datetime < '2022-10-17 00:00:00'
+GROUP BY user_id;
+
+
+CREATE TEMP TABLE withdrawal_slot_s2 AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS withdrawal_points,
+  COUNT(*) AS num_withdrawal
+FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-16 12:00:00' AND datetime < '2022-10-17 00:00:00'
+GROUP BY user_id;
+
+
+CREATE TEMP TABLE gameplay_slot_s2 AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS game_points,
+  SUM("games_played") AS games_played
+FROM User_Gameplay_data
+WHERE datetime >= '2022-10-16 12:00:00' AND datetime < '2022-10-17 00:00:00'
+GROUP BY user_id;
+
+
+DROP TABLE IF EXISTS slot2_bonus_point
+CREATE TEMP TABLE slot2_bonus_point as
+
+WITH deposits AS (
+  SELECT user_id, COUNT(*) AS num_deposit
+  FROM Deposit_Amount_Data
+  WHERE datetime >= '2022-10-16 12:00:00' AND datetime < '2022-10-17 00:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+),
+withdrawals AS (
+  SELECT user_id, COUNT(*) AS num_withdrawal
+  FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-16 12:00:00' AND datetime < '2022-10-17 00:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+)
+SELECT
+  COALESCE(d.user_id, w.user_id) AS user_id,
+  COALESCE(d.num_deposit, 0) AS num_deposit,
+  COALESCE(w.num_withdrawal, 0) AS num_withdrawal,
+  0.001 * GREATEST(COALESCE(d.num_deposit, 0) - COALESCE(w.num_withdrawal, 0), 0) AS bonus_points
+FROM deposits d
+FULL OUTER JOIN withdrawals w ON d.user_id = w.user_id;
+
+
+SELECT 
+  COALESCE(d.user_id, w.user_id, g.user_id, b.user_id) AS user_id,
+  COALESCE(d.deposit_points, 0) AS deposit_points,
+  COALESCE(w.withdrawal_points, 0) AS withdrawal_points,
+  COALESCE(g.game_points, 0) AS game_points,
+  COALESCE(b.bonus_points, 0) AS bonus_points,
+  (
+    COALESCE(d.deposit_points, 0) +
+    COALESCE(w.withdrawal_points, 0) +
+    COALESCE(g.game_points, 0) +
+    COALESCE(b.bonus_points, 0)
+  ) AS total_loyalty_points
+FROM deposit_slot_s2 d
+FULL OUTER JOIN withdrawal_slot_s2 w ON d.user_id = w.user_id
+FULL OUTER JOIN gameplay_slot_s2 g ON COALESCE(d.user_id, w.user_id) = g.user_id
+FULL OUTER JOIN slot2_bonus_point b ON COALESCE(d.user_id, w.user_id, g.user_id) = b.user_id
+ORDER BY total_loyalty_points DESC
+```
+ 
+ **2 c.Calculating total loyalty points for 18nd October Slot S1**:
+```sql
+CREATE TEMP TABLE deposit_slot_18oct_s1  AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS deposit_points,
+  COUNT(*) AS num_deposit
+FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-18 00:00:00' AND datetime < '2022-10-18 12:00:00'
+GROUP BY user_id;
+
+
+CREATE TEMP TABLE withdrawal_slot_18oct_s1  AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS withdrawal_points,
+  COUNT(*) AS num_withdrawal
+FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-18 00:00:00' AND datetime < '2022-10-18 12:00:00'
+GROUP BY user_id;
+
+
+CREATE TEMP TABLE gameplay_slot_18oct_s1  AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS game_points,
+  SUM("games_played") AS games_played
+FROM User_Gameplay_data
+WHERE datetime >= '2022-10-18 00:00:00' AND datetime < '2022-10-18 12:00:00'
+GROUP BY user_id;
+
+
+DROP TABLE IF EXISTS bonus_slot_18oct_s1 
+CREATE TEMP TABLE bonus_slot_18oct_s1  as
+
+WITH deposits AS (
+  SELECT user_id, COUNT(*) AS num_deposit
+  FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-18 00:00:00' AND datetime < '2022-10-18 12:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+),
+withdrawals AS (
+  SELECT user_id, COUNT(*) AS num_withdrawal
+  FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-18 00:00:00' AND datetime < '2022-10-18 12:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+)
+SELECT
+  COALESCE(d.user_id, w.user_id) AS user_id,
+  COALESCE(d.num_deposit, 0) AS num_deposit,
+  COALESCE(w.num_withdrawal, 0) AS num_withdrawal,
+  0.001 * GREATEST(COALESCE(d.num_deposit, 0) - COALESCE(w.num_withdrawal, 0), 0) AS bonus_points
+FROM deposits d
+FULL OUTER JOIN withdrawals w ON d.user_id = w.user_id;
+
+
+SELECT 
+  COALESCE(d.user_id, w.user_id, g.user_id, b.user_id) AS user_id,
+  COALESCE(d.deposit_points, 0) AS deposit_points,
+  COALESCE(w.withdrawal_points, 0) AS withdrawal_points,
+  COALESCE(g.game_points, 0) AS game_points,
+  COALESCE(b.bonus_points, 0) AS bonus_points,
+  (
+    COALESCE(d.deposit_points, 0) +
+    COALESCE(w.withdrawal_points, 0) +
+    COALESCE(g.game_points, 0) +
+    COALESCE(b.bonus_points, 0)
+  ) AS total_loyalty_points
+FROM deposit_slot_18oct_s1  d
+FULL OUTER JOIN withdrawal_slot_18oct_s1 w ON d.user_id = w.user_id
+FULL OUTER JOIN gameplay_slot_18oct_s1 g ON COALESCE(d.user_id, w.user_id) = g.user_id
+FULL OUTER JOIN bonus_slot_18oct_s1 b ON COALESCE(d.user_id, w.user_id, g.user_id) = b.user_id
+ORDER BY total_loyalty_points DESC
 ```
 
-3. **what are top 3 values of total invoice?**:
+**2 d.Calculating total loyalty points for 26nd October Slot S2**:
 ```sql
-select total from invoice
-order by total desc
-limit 3;
-```
+CREATE TEMP TABLE deposit_slot_26oct_s2   AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS deposit_points,
+  COUNT(*) AS num_deposit
+FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-26 12:00:00' AND datetime < '2022-10-27 00:00:00'
+GROUP BY user_id;
 
-4. **which city has the best customers? we would like to throw a promotional music festival in the citywe made the most money write the query that has the  highest sum of invoice totals  Return both the city name & sum of all invoice totals**:
-```sql
-select sum(total) as invoice_total,billing_city
-from invoice
-group by billing_city
-order by invoice_total desc;
-```
+CREATE TEMP TABLE withdrawal_slot_26oct_s2  AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS withdrawal_points,
+  COUNT(*) AS num_withdrawal
+FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-26 12:00:00' AND datetime < '2022-10-27 00:00:00'
+GROUP BY user_id;
 
-5. **who is the best customer, the person who has spent the most money we be declared as the best customer**:
-```sql
-select sum(i.total)as ans,i.customer_id,c.first_name,c.last_name
-from invoice i
-left join customer as c on  c.customer_id=i.customer_id
-group by i.customer_id,c.first_name,c.last_name
-order by ans desc
-limit 1;
+
+CREATE TEMP TABLE gameplay_slot_26oct_s2  AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS game_points,
+  SUM("games_played") AS games_played
+FROM User_Gameplay_data
+WHERE datetime >= '2022-10-26 12:00:00' AND datetime < '2022-10-27 00:00:00'
+GROUP BY user_id;
+
+
+DROP TABLE IF EXISTS bonus_slot_26oct_s2 
+CREATE TEMP TABLE bonus_slot_26oct_s2  as
+WITH deposits AS (
+  SELECT user_id, COUNT(*) AS num_deposit
+  FROM Deposit_Amount_Data
+WHERE datetime >= '2022-10-26 12:00:00' AND datetime < '2022-10-27 00:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+),
+withdrawals AS (
+  SELECT user_id, COUNT(*) AS num_withdrawal
+  FROM Withdrawal_Amount_data
+WHERE datetime >= '2022-10-26 12:00:00' AND datetime < '2022-10-27 00:00:00'
+  GROUP BY user_id
+  ORDER BY 2 desc
+)
+SELECT
+  COALESCE(d.user_id, w.user_id) AS user_id,
+  COALESCE(d.num_deposit, 0) AS num_deposit,
+  COALESCE(w.num_withdrawal, 0) AS num_withdrawal,
+  0.001 * GREATEST(COALESCE(d.num_deposit, 0) - COALESCE(w.num_withdrawal, 0), 0) AS bonus_points
+FROM deposits d
+FULL OUTER JOIN withdrawals w ON d.user_id = w.user_id;
+
+
+SELECT 
+  COALESCE(d.user_id, w.user_id, g.user_id, b.user_id) AS user_id,
+  COALESCE(d.deposit_points, 0) AS deposit_points,
+  COALESCE(w.withdrawal_points, 0) AS withdrawal_points,
+  COALESCE(g.game_points, 0) AS game_points,
+  COALESCE(b.bonus_points, 0) AS bonus_points,
+  (
+    COALESCE(d.deposit_points, 0) +
+    COALESCE(w.withdrawal_points, 0) +
+    COALESCE(g.game_points, 0) +
+    COALESCE(b.bonus_points, 0)
+  ) AS total_loyalty_points
+FROM deposit_slot_26oct_s2  d
+FULL OUTER JOIN withdrawal_slot_26oct_s2 w ON d.user_id = w.user_id
+FULL OUTER JOIN gameplay_slot_26oct_s2 g ON COALESCE(d.user_id, w.user_id) = g.user_id
+FULL OUTER JOIN bonus_slot_26oct_s2 b ON COALESCE(d.user_id, w.user_id, g.user_id) = b.user_id
+ORDER BY total_loyalty_points DESC
 ```
 
 6. **write a query to return the email,firstname,lastname and genre of all rock music listeners written your list ordered alphabetically by email starting with A.**:
@@ -132,88 +414,148 @@ where genre.name='Rock'
 order by email;
 ```
 
-7. **Lets invite the artist who have written the most rock music in our dataset. write a query that returns the artist name and total track count of the top 10 rock bands**:
+**3.Calculate overall loyalty points earned and rank players on the basis of loyalty points in the month of October.In case of tie,
+    number of games played should be taken as the next criteria for ranking**:
 ```sql
-select artist.name,count( track.track_id) as band_count
-from track
-join album on album.album_id=track.album_id
-join artist on artist.artist_id=album.artist_id
-join genre on genre.genre_id=track.genre_id
-where genre.name like 'Rock'
-group by  artist.name
-order by band_count desc
-limit 10;
-```
+CREATE TEMP TABLE deposit_points_to_give_ranking AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS deposit_points,
+  COUNT(*) AS num_deposit
+FROM Deposit_Amount_Data
+WHERE EXTRACT(MONTH FROM datetime) = 10
+GROUP BY user_id;
 
-8. **Return all the track names that have the song length longer than the avg song length.return thename and milliseconds for each track order by the  song length with the longest songs listed first**:
-```sql
-select * from track
-select * from album
-select name,milliseconds
-from track
-where milliseconds>(select avg(milliseconds) as avglength
-                               from track)
-order by milliseconds  desc;
-```
 
-9. **find how much amount spent by each customer on artists?write a query to return customer name,artist name and total spent**:
-```sql
-with best_selling_artist As(
-select artist.artist_id,artist.name,sum(invoice_line.unit_price*invoice_line.quantity) as total_price
-from invoice_line 
-join track on track.track_id=invoice_line.track_id
-join album on album.album_id=track.album_id
-join artist on artist.artist_id=album.artist_id
-group by 1
-order by 3 desc
-limit 1
+CREATE TEMP TABLE withdrawal_points_to_give_ranking AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS withdrawal_points,
+  COUNT(*) AS num_withdrawal
+FROM Withdrawal_Amount_data
+WHERE EXTRACT(MONTH FROM datetime) = 10
+GROUP BY user_id;
+
+
+CREATE TEMP TABLE gameplay_points_to_give_ranking AS
+SELECT 
+  user_id,
+  SUM(loyalty_points) AS game_points,
+  SUM("games_played") AS games_played
+FROM User_Gameplay_data
+WHERE EXTRACT(MONTH FROM datetime) = 10
+GROUP BY user_id;
+
+
+DROP TABLE IF EXISTS bonus_points_to_give_ranking
+CREATE TEMP TABLE  bonus_points_to_give_ranking AS
+
+WITH deposits AS (
+  SELECT user_id, COUNT(*) AS num_deposit
+  FROM Deposit_Amount_Data
+WHERE EXTRACT(MONTH FROM datetime) = 10
+  GROUP BY user_id
+  ORDER BY 2 desc
+),
+withdrawals AS (
+  SELECT user_id, COUNT(*) AS num_withdrawal
+  FROM Withdrawal_Amount_data
+WHERE EXTRACT(MONTH FROM datetime) = 10
+  GROUP BY user_id
+  ORDER BY 2 desc
 )
-select customer.customer_id,customer.first_name,customer.last_name,best_selling_artist.name as artist_name,
-sum(invoice_line.unit_price*invoice_line.quantity) as amount_spent
-from invoice
-join customer on customer.customer_id=invoice.customer_id
-join invoice_line on invoice_line.invoice_id=invoice.invoice_id
-join track on track.track_id=invoice_line.track_id
-join album on album.album_id=track.album_id
-join  best_selling_artist on  best_selling_artist.artist_id=album.artist_id
-group by 1,2,3,4
-order by amount_spent desc
+select
+  COALESCE(d.user_id, w.user_id) AS user_id,
+  COALESCE(d.num_deposit, 0) AS num_deposit,
+  COALESCE(w.num_withdrawal, 0) AS num_withdrawal,
+  0.001 * GREATEST(COALESCE(d.num_deposit, 0) - COALESCE(w.num_withdrawal, 0), 0) AS bonus_points
+FROM deposits d
+FULL OUTER JOIN withdrawals w ON d.user_id = w.user_id;
+
+
+CREATE TEMP TABLE loyalty_points_for_ranking as
+
+SELECT 
+  COALESCE(d.user_id, w.user_id, g.user_id, b.user_id) AS user_id,
+  COALESCE(d.deposit_points, 0) AS deposit_points,
+  COALESCE(w.withdrawal_points, 0) AS withdrawal_points,
+  COALESCE(g.game_points, 0) AS game_points,
+  COALESCE(b.bonus_points, 0) AS bonus_points,
+  (
+    COALESCE(d.deposit_points, 0) +
+    COALESCE(w.withdrawal_points, 0) +
+    COALESCE(g.game_points, 0) +
+    COALESCE(b.bonus_points, 0)
+  ) AS total_loyalty_points
+FROM deposit_points_to_give_ranking d
+FULL OUTER JOIN withdrawal_points_to_give_ranking w ON d.user_id = w.user_id
+FULL OUTER JOIN gameplay_points_to_give_ranking g ON COALESCE(d.user_id, w.user_id) = g.user_id
+FULL OUTER JOIN bonus_points_to_give_ranking b ON COALESCE(d.user_id, w.user_id, g.user_id) = b.user_id
+ORDER BY total_loyalty_points DESC
+
+SELECT * FROM loyalty_points_for_ranking
 ```
 
-10. **we want to find out the most popular music genre for each country . we determine the most popular genre as
-  the genre with the highest amount of purchases ,write a query that returns each country along with the 
-  top genre ,for countries where the maximum number of purchases is shared return all genres**:
+**4.Ranking the players i am using game_points to break tie instead of using games_palyed exactly because game_points is directly proprtional to games_played
+As we can also use game_points to break the tie in place of games_payed to**
 ```sql
-with output_as as(
-select invoice.billing_country as country,genre.name as genre_name,
-count(invoice_line.quantity) as total_purchase_number,
-row_number() over(partition by invoice.billing_country order by count(invoice_line.quantity)desc) as row_num
-from invoice
-join invoice_line on invoice.invoice_id=invoice_line.invoice_id
-join track on track.track_id=invoice_line.track_id
-join genre on genre.genre_id=track.genre_id
-group by country,genre_name
-order by country, total_purchase_number desc
+CREATE TEMP TABLE top_50_players AS
+WITH ranking_of_players as(
+SELECT *,
+DENSE_RANK() over(ORDER BY COALESCE(total_loyalty_points,0) DESC , COALESCE(game_points, 0) DESC) AS Player_ranking
+FROM loyalty_points_for_ranking
 )
-select * from output_as 
-where row_num<=1
+SELECT * FROM ranking_of_players
+LIMIT 50
 
+SELECT * FROM top_50_players
 ```
 
-11. **Write a query that determines the customer that has spent the most on music in each country
-  write a query that return the country along with the top customer and how much they spent fot the
-  countries where the top amount spent is shared,provide all customers who spent this amount**:
+ **5.Distributing bonus proportionally among top 50 players**:
 ```sql
-wwith Top_spent_customer as(
-select customer.first_name,customer.last_name,invoice.billing_country,sum(invoice.total) as total_spent,
-row_number()over(partition by invoice.billing_country order by sum(invoice.total) desc ) as row_num_sum
-from customer
-join invoice on customer.customer_id=invoice.customer_id
-group  by 1,2,3
-order by invoice.billing_country,total_spent desc
+SELECT 
+  user_id,
+  total_loyalty_points,
+  ROUND(
+    (total_loyalty_points / SUM(total_loyalty_points) OVER ()) * 50000,
+    2
+  ) AS bonus_awarded
+FROM top_50_players
+ORDER BY bonus_awarded DESC;
+```
+
+**6.What is the average deposit amount per transaction**:
+```sql
+SELECT 
+  AVG(deposit_amount) AS avg_deposit_amount
+FROM Deposit_Amount_Data;
+```
+
+**7.What is the average deposit amount per user in a month**:
+```sql
+SELECT 
+  AVG(user_total_deposit) AS avg_deposit_per_user_a_month
+FROM (
+  SELECT 
+    user_id,
+    SUM(deposit_amount) AS user_total_deposit
+  FROM Deposit_Amount_Data
+  WHERE extract(month from datetime)=10
+  GROUP BY user_id
 )
-select * from  Top_spent_customer
-where row_num_sum<=1
+
+```
+**8.What is the average number of games played per user**:
+```sql
+SELECT 
+  AVG(total_games_per_user) AS avg_games_played_per_user
+FROM (
+  SELECT 
+    user_id,
+    SUM(games_played) AS total_games_per_user
+  FROM User_Gameplay_data
+  GROUP BY user_id
+) AS user_game_totals;
 
 ```
 
