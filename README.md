@@ -18,16 +18,6 @@ Loyalty Point = (0.01 * deposit) + (0.005 * Withdrawal amount) + (0.001 * (maxim
 
 
 
-
-
-
-
-
-
-
-
-
-
 ## Objectives
 **This project presents a player loyalty analysis for ABC, a real-money gaming platform.
 Using player activity data (deposits, withdrawals, and games), the goal is to calculate
@@ -561,16 +551,17 @@ FROM (
 
 ## Findings
 
-- **Artist Demographics**: The dataset includes artist from various age groups, with sales distributed across different categories such as rock,classic and other diffrent genres etc.
-- **High-Value Transactions**: Several transactions had a total sale amount greater than 1000, indicating premium purchases.
-- **Sales Trends**: Monthly analysis shows variations in sales, helping identify peak seasons.
-- **Customer Insights**: The analysis identifies the top-spending customers and the most popular album categories.
+- **Analyzed user behavior**on a real-money gaming platform to improve loyalty-based engagement and reward distribution**.
+- **Created modular SQL pipelines** using temporary tables to compute slot-wise and monthly user-level activity metrics.
+- **Identified top 50** loyal users and designed a data-driven ₹50,000 bonus allocation strategy using proportional distribution using SQL.
+- **Evaluated fairness** of the existing loyalty formula and recommended enhancements to improve user retention and platform engagement..
 
-## Reports
+## suggestions
 
-- **Sales Summary**: A detailed report summarizing total sales, customer demographics, and category performance.
-- **Trend Analysis**: Insights into sales trends across different genres of music.
-- **Customer Insights**: Reports on top customers and unique customer counts per category.
+- Increase the weight of gameplay Boost( 0.2 × games to 0.5) to reward users who consistently engage.
+- Reduce or remove points for withdrawals Since withdrawals reduce user balance, rewarding them (even lightly) may not be.
+- Referral-based bonuses Encourage word-of-mouth growth by awarding points for verified referrals.
+-  Incorporate streaks or session frequency Award bonus points for consecutive days of login or play to drive retention
 
 ## Conclusion
 
