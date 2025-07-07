@@ -551,7 +551,7 @@ FROM (
 
 ## Findings
 
-- **Analyzed user behavior**on a real-money gaming platform to improve loyalty-based engagement and reward distribution**.
+- **Analyzed user behavior**on a real-money gaming platform to improve loyalty-based engagement and reward distribution.
 - **Created modular SQL pipelines** using temporary tables to compute slot-wise and monthly user-level activity metrics.
 - **Identified top 50** loyal users and designed a data-driven ₹50,000 bonus allocation strategy using proportional distribution using SQL.
 - **Evaluated fairness** of the existing loyalty formula and recommended enhancements to improve user retention and platform engagement..
